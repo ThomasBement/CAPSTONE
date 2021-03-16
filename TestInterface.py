@@ -1,11 +1,10 @@
 """
---------------------------------
-MECH-305
---------------------------------
-NAME: THOMAS BEMENT
-SN: 24099822
-TUTORIAL 5 HYPOTHESIS TESTING
---------------------------------
+MECH 305/6 DATA ANALYSIS
+----------------------------------------
+WRITTEN BY: THOMAS BEMENT
+DATE: 3/07/2021
+
+CAPSTONE EXPERIMENT
 """
 
 """
@@ -26,7 +25,7 @@ import tkinter as tk
 PLOTTING AND DATA COLLECTION
 """
 Calibration=0.9897807654 # You need to find the exact calibration number
-filName = 'Test'
+filName = 'SiftedWhiteFlour'
 style.use('fivethirtyeight')
 
 # Define figure and title
@@ -70,10 +69,9 @@ dry = 1023
 ani = animation.FuncAnimation(fig, animate, interval=1)
 plt.show()
 ArduinoData.close()
-plt.savefig('%s.png' %filName, format='png', bbox_inches='tight')
 plt.close()
 f = open("%s.csv" %filName,"w+")
-f.write('Time,Pressure,Moisture\n')
+f.write('Time,Pressure,0.3um,0.5um,1um,2.5um,5um,10um\n')
 for i in range(len(dat[0])-1):
-    f.write('%f,%f,%f\n' %(dat[0][i],dat[1][i],dat[2][i]))
+    f.write('%f,%f,%f,%f,%f,%f,%f,%f\n' %(dat[0][i],dat[1][i],dat[2][i],dat[3][i],dat[4][i],dat[5][i],dat[6][i],dat[7][i]))
 f.close()
