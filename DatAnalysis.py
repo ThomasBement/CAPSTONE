@@ -27,11 +27,33 @@ DEFINE GLOBAL FUNCTIONS
 def flowRate(CD, Rho, orfD, pipeD, dP):
     return ((CD/(math.sqrt(1-((orfD/pipeD)**4))))*((math.pi*(orfD**2))/4)*(math.sqrt(2*dP*Rho)))/Rho
 
+def partSize(szStr):
+    if (szStr == '0.3um'):
+        return 2
+    elif (szStr == '0.5um'):
+        return 3
+    elif (szStr == '1um'):
+        return 4
+    elif (szStr == '2.5um'):
+        return 5
+    elif (szStr == '5um'):
+        return 6
+    elif (szStr == '10um'):
+        return 7
+
+def getRange(dat, key, index):
+    if (index==7):
+        return dat[key][index]
+    else:
+        diff = []
+        for i in range(len(dat[key][index])):
+            diff.append(dat[key][index][i] - dat[key][index+1][i])
+        return diff
 """
-READ ANALYSIS
+READ DATA
 """
-# Headers: X_Value, Intake Pressure, Cylinder Pressure, Encoder, TDC, Spark
-# datStruct  0    ,        1       ,         2        ,   3    ,  4 ,   5
+# Headers: [Time,Pressure,0.3um,0.5um,1um,2.5um,5um,10um]
+# Index:     0  ,   1    ,   2 ,  3  , 4 ,  5  , 6 ,  7 ] 
 
 def readDat(pathlist):
     column_number = 8
@@ -47,17 +69,29 @@ def readDat(pathlist):
                             for i in range(column_number):
                                 ans[key][i].append(float(row[i]))
     return ans
-
+"""
+DATA ANALYSIS
+"""
+def stats(dat):
+    numpyDat, mean, std = [], [], []
+    for i in range(len(dat)):
+        numpyDat.append(np.array(dat[i]))
+    mean = np.mean(numpyDat)
+    std = np.std(numpyDat)  
+    return mean, std, numpyDat
 """
 PLOT FUNCTIONS
 """
 Headers = ['Time','Pressure','0.3um','0.5um','1um','2.5um','5um','10um']
 
-def get_cmap(n, name='plasma'):
+def get_cmap1(n, name='plasma'):
+    return plt.cm.get_cmap(name, n)
+
+def get_cmap2(n, name='magma'):
     return plt.cm.get_cmap(name, n)
 
 def timeSerries(dat, key):
-    cmap = get_cmap(len(dat[key]))
+    cmap = get_cmap1(len(dat[key]))
     fig, axs = plt.subplots(2)
     fig.suptitle('Time serries plot for: %s' %key)
     fig.tight_layout(pad=3.0)
@@ -80,23 +114,52 @@ def timeSerries(dat, key):
     return 
 
 def particleOverlay(dat, key1, key2):
-    cmap = get_cmap(12)
+    cmap1 = get_cmap1(len(dat[key1])+2)
+    cmap2 = get_cmap2(len(dat[key2])+2)
     legendlis = []
     count = 0
     plt.title('Particle count data for %s and %s' %(key1, key2))
     plt.xlabel('Time (s)')
     plt.ylabel('# Particles/0.1 L')
     for i in range(2,len(dat[key1])):
-        plt.plot(dat[key1][0], dat[key1][i], color=cmap(i), alpha=0.6)
+        plt.plot(dat[key1][0], dat[key1][i], color=cmap1(i), alpha=0.6)
         legendlis.append('%s: %s' %(key1, Headers[i]))
-        count = i+1
     for i in range(2,len(dat[key2])):
-        plt.plot(dat[key2][0], dat[key2][i], color=cmap(count), alpha=0.6)
+        plt.plot(dat[key2][0], dat[key2][i], color=cmap2(i), alpha=0.6)
         legendlis.append('%s: %s' %(key2, Headers[i]))
-        count += 1
     plt.legend(legendlis, bbox_to_anchor=(1.04, 0.5), loc="center left")
     # Save Plots
     plt.savefig('PythonFigures/TS/%s_%s_OVERLAY.png' %(key1, key2), format='png', bbox_inches='tight', orientation='landscape')
+    plt.show()
+    plt.close()
+    return
+
+def filterEff(dat, particleSize):
+    lowIndex = partSize(particleSize)
+    cmap = get_cmap1(len(dat)+2)
+    legendlis = []
+    count = 0
+    plt.title('# Particles/0.1 L vs. Pressure Drop:')
+    plt.xlabel('Pressure Drop (Pa)')
+    plt.ylabel('# Particles/0.1 L')
+    allMean, allSTD = [], [] 
+    allMeanPress, allSTDPress = [], [] 
+    names = []
+    for key in dat:
+        diffLis = getRange(dat, key, lowIndex)
+        mean, std, _ = stats(diffLis)
+        meanPress, stdPress, _ = stats(dat[key][1])
+        allMean.append(mean)
+        allSTD.append(std)
+        allMeanPress.append(meanPress)
+        allSTDPress.append(stdPress)
+        names.append(key)
+    for i in range(len(dat)):
+        plt.errorbar(allMeanPress[i], allMean[i], xerr=allSTDPress[i], yerr=allSTD[i], color=cmap(i))
+        legendlis.append(names[i])
+    plt.legend(legendlis, bbox_to_anchor=(1.04, 0.5), loc="center left")
+    # Save Plots
+    plt.savefig('PythonFigures/Efficency/Efficency_%s.png' %particleSize, format='png', bbox_inches='tight', orientation='landscape')
     plt.show()
     plt.close()
     return
@@ -105,5 +168,6 @@ def particleOverlay(dat, key1, key2):
 RUN ANALYSIS
 """
 allDat = readDat(['.\Data\CSV'])
-timeSerries(allDat, 'SiftedWhiteFlour')
-particleOverlay(allDat, 'BakingSodaBlended', 'SiftedWhiteFlour')
+#timeSerries(allDat, 'Ambient')
+#particleOverlay(allDat, 'IncenceMask001', 'IncenceMask002')
+filterEff(allDat, '0.5um')
