@@ -24,6 +24,7 @@ Honeywell_RSC rsc(
 uint8_t  buffer[64];
 uint16_t calculated_checksum;
 uint16_t pkt_checksum;
+uint16_t priv_pkt_checksum;
 uint16_t  pass_count;
 volatile double CalibrationValue;
 unsigned long time;
@@ -92,10 +93,22 @@ void loop() {
     // Particles under 5.0 um
     Serial.print((uint16_t)MAKE_INT(buffer[Count50_High],buffer[Count50_Low]));Serial.print(" ");
     // Particles under 10 um
-    Serial.print((uint16_t)MAKE_INT(buffer[Count100_High],buffer[Count100_Low]));Serial.println();
+    Serial.print((uint16_t)MAKE_INT(buffer[Count100_High],buffer[Count100_Low]));Serial.print(" ");
+    // PM VALUES
+    // PM 1.0 Standard Particle
+    Serial.print((uint16_t)MAKE_INT(buffer[PM10std_High],buffer[PM10std_Low]));Serial.print(" ");
+    // PM 2.5 Standard Particle
+    Serial.print((uint16_t)MAKE_INT(buffer[PM25std_High],buffer[PM25std_Low]));Serial.print(" ");
+    // PM 10.0 Standard Particle
+    Serial.print((uint16_t)MAKE_INT(buffer[PM100std_High],buffer[PM100std_Low]));Serial.print(" ");
+    // PM 1.0 Atmospheric Environment
+    Serial.print((uint16_t)MAKE_INT(buffer[PM10atm_High],buffer[PM10atm_Low]));Serial.print(" ");
+    // PM 1.0 Atmospheric Environment
+    Serial.print((uint16_t)MAKE_INT(buffer[PM25atm_High],buffer[PM25atm_Low]));Serial.print(" ");
+    // PM 1.0 Atmospheric Environment
+    Serial.print((uint16_t)MAKE_INT(buffer[PM100atm_High],buffer[PM100atm_Low]));Serial.println();
     pass_count +=1;
   }
-  
 }
 
 boolean readPMSdata(void) {
@@ -138,5 +151,13 @@ boolean readPMSdata(void) {
     Serial.print("pkt_checksum:");Serial.println((uint16_t)pkt_checksum, HEX);
     return false;
   }
-  else return true;
+
+  // Check if current checksum is the same as the last one if so
+  if (pkt_checksum==priv_pkt_checksum) return false; 
+  
+  else {
+    // Update privious check sum after output
+    priv_pkt_checksum = pkt_checksum;
+    return true;
+  }
 }
