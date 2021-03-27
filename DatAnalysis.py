@@ -52,16 +52,16 @@ def getRange(dat, key, index):
 """
 READ DATA
 """
-# Headers: [Time,Pressure,0.3um,0.5um,1um,2.5um,5um,10um]
-# Index:     0  ,   1    ,   2 ,  3  , 4 ,  5  , 6 ,  7 ] 
+#     [[time],[pressure], [0.3um], [0.5um], [1um], [2.5um], [5um], [10um], [PM1.0 SP], [PM2.5 SP], [PM10.0 SP], [PM1.0 AM], [PM2.5 AM], [PM10.0 AM]]
+#     [  0   ,    1     ,    2   ,    3   ,   4  ,  5     ,   6  ,    7  ,      8    ,     9     ,      10    ,     11    ,     12    ,     13     ]
 
 def readDat(pathlist):
-    column_number = 8
+    column_number = 14
     ans = {}
     for path in pathlist:
         for filename in glob.glob(os.path.join(path, '*.csv')):
             key = filename.split('\\')[-1].replace('.csv', '')
-            ans[key] = ([],[],[],[],[],[],[],[])
+            ans[key] = ([],[],[],[],[],[],[],[],[],[],[],[],[],[])
             with open(os.path.join(os.getcwd(), filename), 'r') as f: # open in readonly mode
                 for j, row in enumerate(csv.reader(f, delimiter=',')):
                     if j != 0:
@@ -82,7 +82,7 @@ def stats(dat):
 """
 PLOT FUNCTIONS
 """
-Headers = ['Time','Pressure','0.3um','0.5um','1um','2.5um','5um','10um']
+Headers = ['Time','Pressure','0.3um','0.5um','1um','2.5um','5um','10um','PM1.0_SP','PM2.5_SP','PM10.0_SP','PM1.0_AM','PM2.5_AM','PM10.0_AM']
 
 def get_cmap1(n, name='plasma'):
     return plt.cm.get_cmap(name, n)
@@ -101,7 +101,7 @@ def timeSerries(dat, key):
     axs[0].set(xlabel='Time (s)', ylabel='Pressure Difference (Pa)')
     legendlis = []
     # Particle count vs. time
-    for i in range(2,len(dat[key])):
+    for i in range(2,7):
         axs[1].plot(dat[key][0], dat[key][i], color=cmap(i))
         legendlis.append(Headers[i])
     axs[1].set_title('Particle Count vs. Time:')
@@ -121,10 +121,10 @@ def particleOverlay(dat, key1, key2):
     plt.title('Particle count data for %s and %s' %(key1, key2))
     plt.xlabel('Time (s)')
     plt.ylabel('# Particles/0.1 L')
-    for i in range(2,len(dat[key1])):
+    for i in range(2,7):
         plt.plot(dat[key1][0], dat[key1][i], color=cmap1(i), alpha=0.6)
         legendlis.append('%s: %s' %(key1, Headers[i]))
-    for i in range(2,len(dat[key2])):
+    for i in range(2,7):
         plt.plot(dat[key2][0], dat[key2][i], color=cmap2(i), alpha=0.6)
         legendlis.append('%s: %s' %(key2, Headers[i]))
     plt.legend(legendlis, bbox_to_anchor=(1.04, 0.5), loc="center left")
@@ -168,6 +168,6 @@ def filterEff(dat, particleSize):
 RUN ANALYSIS
 """
 allDat = readDat(['.\Data\CSV'])
-#timeSerries(allDat, 'Ambient')
+timeSerries(allDat, 'Ambient_Day1')
 #particleOverlay(allDat, 'IncenceMask001', 'IncenceMask002')
-filterEff(allDat, '0.5um')
+#filterEff(allDat, '0.5um')
